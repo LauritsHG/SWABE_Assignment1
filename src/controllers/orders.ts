@@ -4,10 +4,11 @@ const orderController = express1.Router();
 
 import { Request, Response } from "express";
 import mongoose from "mongoose";
-import { schema } from "../ReservationSchema";
+import { schema } from "../models/ReservationSchema";
 import seedData from "./SeedDataForDb.json";
 
-const dbConnection = mongoose.createConnection("mongodb://localhost:27017/Assignment1"
+const dbConnection = mongoose.createConnection(
+  "mongodb://localhost:27017/Assignment1"
 );
 const OrderModel = dbConnection.model("TEST", schema);
 
