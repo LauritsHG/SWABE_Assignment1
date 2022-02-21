@@ -1,7 +1,16 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
-import { schema } from "../models/RoomSchema";
+import { schema } from "../models/UserSchema";
 import { User } from "../models/UserSchema";
+import {
+  randomBytes,
+  SALT_LENGTH,
+  pbkdf2,
+  DIGEST,
+  KEY_LENGTH,
+  ROUNDS,
+  ITERATIONS,
+} from "../util/crypto-util";
 
 const dbConnection = mongoose.createConnection(
   "mongodb://localhost:27017/Assignment1"
@@ -23,24 +32,31 @@ const listUsers = async (req: Request, res: Response) => {
 
 const createUser = async (req: Request, res: Response) => {
   const { firstName, lastName, email, password } = req.body;
-  // if (await userExists(email)) {
-  //   res.status(400).json({
-  //     message: "User already exists",
-  //   });
-  // } else {
-  //   let salt = await randomBytes(SALT_LENGTH);
-  //   let hashed = await pbkdf2(
-  //     password,
-  //     salt.toString("hex"),
-  //     ITERATIONS,
-  //     KEY_LENGTH,
-  //     DIGEST
-  //   );
-  //   let user = newUser(email);
-  //   user.password.setPassword(hashed.toString("hex"), salt.toString("hex"));
-  //   await user.save();
-  //   res.json(user);
-  // }
+  if (await userExists(email)) {
+    res.status(400).json({
+      message: "User already exists",
+    });
+  } else {
+    let salt = await randomBytes(SALT_LENGTH);
+    let hashed = await pbkdf2(
+      password,
+      salt.toString("hex"),
+      ITERATIONS,
+      KEY_LENGTH,
+      DIGEST
+    );
+
+    let user = new UserModel({
+      firstName: firstName,
+      lastName: lastName,
+      email: email,
+      password: hashed.toString("hex"),
+      salt: salt.toString("hex"),
+    });
+
+    await user.save();
+    res.json(user);
+  }
 };
 
 const login = async (req: Request, res: Response) => {};
