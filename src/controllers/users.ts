@@ -14,8 +14,17 @@ import {
 import { sign, verify } from "jsonwebtoken";
 import { readFile } from "fs";
 import { join } from "path";
+// import { dbConnection } from "../index";
 
-const PATH_PRIVATE_KEY = join(__dirname, "..", "..", "auth-rsa256.key");
+const PATH_PRIVATE_KEY = join(
+  __dirname,
+  "..",
+  "..",
+  "..",
+  "SWABE_Assignment1",
+  "src",
+  "auth-rsa256.key"
+);
 const PATH_PUBLIC_KEY = join(
   __dirname,
   "..",
@@ -81,17 +90,19 @@ const createUser = async (req: Request, res: Response) => {
 
 const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
+  res.setHeader("Content-Type", "application/json");
 
-  let user = UserModel.findOne({ email }).exec();
+  let user: User = await UserModel.findOne({ email: email }).lean().exec();
 
+  //await user.isPasswordValid(password as string)
   if (user) {
-    if (await user.isPasswordValid(password as string)) {
+    if (await isPasswordValid(password, user.salt, user.password)) {
       readFile(PATH_PRIVATE_KEY, (err, privateKey) => {
         if (err) {
           res.sendStatus(500);
         } else {
           sign(
-            { email, admin: true },
+            { email, Role: user.role },
             privateKey,
             { expiresIn: "1h", header: { alg: "RS256", x5u: X5U } },
             (err: any, token: any) => {
@@ -121,4 +132,13 @@ export const user = {
   listUsers,
   createUser,
   login,
+};
+// Should be in the user schema.
+let isPasswordValid = async function (
+  password: string,
+  salt: string,
+  userHash: string
+) {
+  const hash = await pbkdf2(password, salt, ITERATIONS, KEY_LENGTH, DIGEST);
+  return userHash === hash.toString("hex");
 };

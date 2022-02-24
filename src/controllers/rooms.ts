@@ -3,10 +3,12 @@ import { Request, Response } from "express";
 import mongoose from "mongoose";
 import { schema } from "../models/RoomSchema";
 import seedData from "./SeedDataForDb.json";
+// import { dbConnection } from "../index";
 
 const dbConnection = mongoose.createConnection(
   "mongodb://localhost:27017/Assignment1"
 );
+
 const RoomModel = dbConnection.model("rooms", schema);
 
 const roomsList = async (req: Request, res: Response) => {

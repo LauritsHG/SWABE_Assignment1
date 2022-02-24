@@ -6,7 +6,10 @@ import { Request, Response } from "express";
 import mongoose from "mongoose";
 import { schema } from "../models/ReservationSchema";
 import seedData from "./SeedDataForDb.json";
+import { decode } from "jsonwebtoken";
+// import { dbConnection } from "../index";
 
+// There should only be one connection
 const dbConnection = mongoose.createConnection(
   "mongodb://localhost:27017/Assignment1"
 );
@@ -14,16 +17,29 @@ const ReservationModel = dbConnection.model("Reservation", schema);
 
 const reservationList = async (req: Request, res: Response) => {
   res.setHeader("Content-Type", "application/json");
-  let { cur, pri, mat } = req.query;
-  let filter = { currency: {}, price: {}, material: {} }; // {currency: {$exists: true},material: {$exists: true},price: {$exists: true}};
-  if (cur != null) filter.currency = cur;
-  else filter.currency = { $exists: true };
-  if (pri != null) filter.price = { $gte: pri };
-  else filter.price = { $exists: true };
-  if (mat != null) filter.material = mat;
-  else filter.material = { $exists: true };
-  let result = await ReservationModel.find(filter).lean().exec();
-  res.json(result);
+  // let { cur, pri, mat } = req.query;
+  // let filter = { currency: {}, price: {}, material: {} }; // {currency: {$exists: true},material: {$exists: true},price: {$exists: true}};
+  // if (cur != null) filter.currency = cur;
+  // else filter.currency = { $exists: true };
+  // if (pri != null) filter.price = { $gte: pri };
+  // else filter.price = { $exists: true };
+  // if (mat != null) filter.material = mat;
+  // else filter.material = { $exists: true };
+  //Test af JWT
+  // MANGLER CHECK AF TOKEN, HER DECODES KUN der verifies IKKE Paa DEN.
+  const token = req.get("authorization")?.split(" ")[1];
+  if (token) {
+    const jwt = decode(token, { json: true });
+    if (jwt?.Role === "MANAGER") {
+      let result = await ReservationModel.find({}).lean().exec();
+      res.json(result);
+    } else {
+      res.sendStatus(401);
+    }
+  } else {
+    res.sendStatus(400);
+  }
+
   // look in bottom of scripts for a smarter filter way
 };
 
