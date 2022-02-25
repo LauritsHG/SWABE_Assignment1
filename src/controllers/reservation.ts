@@ -4,7 +4,7 @@ const orderController = express1.Router();
 
 import { Request, Response } from "express";
 import mongoose from "mongoose";
-import { schema } from "../models/ReservationSchema";
+import { Reservation, schema } from "../models/ReservationSchema";
 import seedData from "./SeedDataForDb.json";
 import { decode } from "jsonwebtoken";
 // import { dbConnection } from "../index";
@@ -17,14 +17,7 @@ const ReservationModel = dbConnection.model("Reservation", schema);
 
 const reservationList = async (req: Request, res: Response) => {
   res.setHeader("Content-Type", "application/json");
-  // let { cur, pri, mat } = req.query;
-  // let filter = { currency: {}, price: {}, material: {} }; // {currency: {$exists: true},material: {$exists: true},price: {$exists: true}};
-  // if (cur != null) filter.currency = cur;
-  // else filter.currency = { $exists: true };
-  // if (pri != null) filter.price = { $gte: pri };
-  // else filter.price = { $exists: true };
-  // if (mat != null) filter.material = mat;
-  // else filter.material = { $exists: true };
+
   //Test af JWT
   // MANGLER CHECK AF TOKEN, HER DECODES KUN der verifies IKKE Paa DEN.
   const token = req.get("authorization")?.split(" ")[1];
@@ -43,34 +36,42 @@ const reservationList = async (req: Request, res: Response) => {
   // look in bottom of scripts for a smarter filter way
 };
 
+//needs only to be accessible for roles manager, clerk, and guest (if created by guest)
 const findReservation = async (req: Request, res: Response) => {
-  ReservationModel.insertMany(seedData);
-  res.setHeader("Content-Type", "application/json");
-  res.json({ data: "SeedData added" });
+  const { uid } = req.params;
+  let result = await ReservationModel.find({ _uid: uid }).exec();
+  res.json(result);
 };
 
 const createReservation = async (req: Request, res: Response) => {
-  //res.setHeader('Content-Type', 'application/json');
-  //res.json({"data": "Hello Orders id"});
-  res.setHeader("Content-Type", "application/json");
-  let { uid } = req.params;
-  let result = await ReservationModel.find({ _id: uid }).lean().exec();
-  res.json(result);
+  const { userId, dateFrom, dateTo, roomId } = req.body;
+
+  let reservation = new ReservationModel({
+    userId: userId,
+    dateFrom: dateFrom,
+    dateTo: dateTo,
+    roomId: roomId,
+  });
+
+  await reservation.save();
+  res.json(reservation);
 };
-// Slet hele document og ændre det til det nye
+
+//needs only to be accessible for roles manager, clerk, and guest (if created by guest)
 const updateReservation = async (req: Request, res: Response) => {
-  const data = req.body;
-  res.setHeader("Content-Type", "application/json");
-  let { uid } = req.params;
-  let result = await ReservationModel.replaceOne({ _id: uid }, data);
-  res.json(result);
+  const { uid } = req.params;
+  const body = req.body;
+  let result = await ReservationModel.updateOne(
+    { _id: uid },
+    { $set: body }
+  ).exec();
+  res.json({ uid, result });
 };
-// Updater documentet
+
+//needs only to be accessible for roles manager and clerk
 const deleteReservation = async (req: Request, res: Response) => {
-  const data = req.body;
-  res.setHeader("Content-Type", "application/json");
-  let { uid } = req.params;
-  let result = await ReservationModel.updateOne({ _id: uid }, data);
+  const { uid } = req.params;
+  let result = await ReservationModel.deleteOne({ _id: uid });
   res.json(result);
 };
 
