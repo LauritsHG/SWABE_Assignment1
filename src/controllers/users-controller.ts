@@ -1,20 +1,18 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
-import { schema } from "../models/UserSchema";
-import { User } from "../models/UserSchema";
+import { schema } from "../models/user-schema";
+import { User } from "../models/user-schema";
 import {
   randomBytes,
   SALT_LENGTH,
   pbkdf2,
   DIGEST,
   KEY_LENGTH,
-  ROUNDS,
   ITERATIONS,
 } from "../util/crypto-util";
-import { sign, verify } from "jsonwebtoken";
+import { sign } from "jsonwebtoken";
 import { readFile } from "fs";
 import { join } from "path";
-// import { dbConnection } from "../index";
 
 const PATH_PRIVATE_KEY = join(
   __dirname,
@@ -24,13 +22,6 @@ const PATH_PRIVATE_KEY = join(
   "SWABE_Assignment1",
   "src",
   "auth-rsa256.key"
-);
-const PATH_PUBLIC_KEY = join(
-  __dirname,
-  "..",
-  "..",
-  "public",
-  "auth-rsa256.key.pub"
 );
 
 const X5U = "http://localhost:3000/auth-rsa256.key.pub";
@@ -92,7 +83,7 @@ const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
   res.setHeader("Content-Type", "application/json");
 
-  let user: User = await UserModel.findOne({ email: email }).lean().exec();
+  let user = await UserModel.findOne({ email: email }).lean().exec();
 
   //await user.isPasswordValid(password as string)
   if (user) {
@@ -102,7 +93,7 @@ const login = async (req: Request, res: Response) => {
           res.sendStatus(500);
         } else {
           sign(
-            { email, Role: user.role },
+            { email, Role: user.role, UserId: user._id },
             privateKey,
             { expiresIn: "1h", header: { alg: "RS256", x5u: X5U } },
             (err: any, token: any) => {

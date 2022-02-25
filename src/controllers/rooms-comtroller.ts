@@ -1,8 +1,7 @@
 //import { Router } from "express";
 import { Request, Response } from "express";
 import mongoose from "mongoose";
-import { schema } from "../models/RoomSchema";
-import seedData from "./SeedDataForDb.json";
+import { schema } from "../models/room-schema";
 // import { dbConnection } from "../index";
 
 const dbConnection = mongoose.createConnection(
@@ -27,7 +26,6 @@ const roomsList = async (req: Request, res: Response) => {
 };
 
 const findRoom = async (req: Request, res: Response) => {
-  RoomModel.insertMany(seedData);
   res.setHeader("Content-Type", "application/json");
   res.json({ data: "SeedData added" });
 };

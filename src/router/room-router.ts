@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { room } from "../controllers/rooms";
+import { room } from "../controllers/rooms-comtroller";
 
 const router = Router();
 
