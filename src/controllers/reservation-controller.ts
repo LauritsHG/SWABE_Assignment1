@@ -1,21 +1,19 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import { Reservation, schema } from "../models/reservation-schema";
-import { decode } from "jsonwebtoken";
 import { getMetaDataFromToken } from "../util/middleware-util";
 import { Role } from "../models/user-schema";
-// import { dbConnection } from "../index";
 
-// There should only be one connection
 const dbConnection = mongoose.createConnection(
   "mongodb://localhost:27017/Assignment1"
 );
 export const ReservationModel = dbConnection.model("Reservation", schema);
 
+//needs only to be accessible for roles manager, clerk
 const reservationList = async (req: Request, res: Response) => {
   let filter = {};
 
-  let { role, userId } = getMetaDataFromToken(req);
+  let { role } = getMetaDataFromToken(req);
   if (role === Role.manager || role === Role.clerk) {
     const { from, to } = req.query;
 
@@ -59,7 +57,7 @@ const findReservation = async (req: Request, res: Response) => {
 
 const createReservation = async (req: Request, res: Response) => {
   const { dateFrom, dateTo, roomId } = req.body;
-  const { role, userId } = getMetaDataFromToken(req);
+  const { userId } = getMetaDataFromToken(req);
 
   let filter = {};
 
@@ -113,7 +111,7 @@ const updateReservation = async (req: Request, res: Response) => {
 
 //needs only to be accessible for roles manager and clerk
 const deleteReservation = async (req: Request, res: Response) => {
-  const { role, userId } = getMetaDataFromToken(req);
+  const { role } = getMetaDataFromToken(req);
 
   if (role === Role.manager || role === Role.clerk) {
     const { uid } = req.params;
@@ -133,29 +131,3 @@ export const reservation = {
   updateReservation,
   deleteReservation,
 };
-
-// const { src, dst, f, t } = req.query
-
-// let filter = { }
-
-// if(src) {
-//   filter = { src }
-// }
-
-// if(dst) {
-//   filter = { ...filter, dst }
-// }
-
-// if(f && t) {
-//   filter = { ...filter, ts: { $gt: f, $lt: t }}
-// } else {
-//   if(f) {
-//     filter = { ...filter, ts: { $gt: f }}
-//   }
-//   if(t) {
-//     filter = { ...filter, ts: { $lt: t }}
-//   }
-// }
-
-// let result = await TransactionModel.find(filter, { __v: 0 }).lean()
-// res.json(result);

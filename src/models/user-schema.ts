@@ -13,7 +13,6 @@ export interface User {
   role: Role;
   password: string;
   salt: string;
-  isPasswordValid(password: string): boolean;
 }
 
 export const schema = new Schema<User>({
@@ -24,14 +23,3 @@ export const schema = new Schema<User>({
   password: { type: String, required: true },
   salt: { type: String, required: true },
 });
-
-schema.methods.isPasswordValid = async function (password: string) {
-  const hash = await pbkdf2(
-    password,
-    this.salt,
-    ITERATIONS,
-    KEY_LENGTH,
-    DIGEST
-  );
-  return this.hash === hash.toString("hex");
-};

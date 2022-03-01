@@ -27,6 +27,7 @@ export const getMetaDataFromToken = (req: Request): MetaData => {
   }
 };
 
+//Function inspired from lesson 3 authentication example
 export const verifyToken = (
   req: Request,
   res: Response,

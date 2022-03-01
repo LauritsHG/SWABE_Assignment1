@@ -49,6 +49,7 @@ const listUsers = async (req: Request, res: Response) => {
   res.json(result);
 };
 
+//Function inspired from lesson 3 authentication example
 const createUser = async (req: Request, res: Response) => {
   const { firstName, lastName, email, role, password } = req.body;
   if (await userExists(email)) {
@@ -79,13 +80,13 @@ const createUser = async (req: Request, res: Response) => {
   }
 };
 
+//Function inspired from lesson 3 authentication example
 const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
   res.setHeader("Content-Type", "application/json");
 
   let user = await UserModel.findOne({ email: email }).lean().exec();
 
-  //await user.isPasswordValid(password as string)
   if (user) {
     if (await isPasswordValid(password, user.salt, user.password)) {
       readFile(PATH_PRIVATE_KEY, (err, privateKey) => {
@@ -118,13 +119,7 @@ const login = async (req: Request, res: Response) => {
 
 const userExists = (email: string) => UserModel.findOne({ email }).exec();
 
-export const user = {
-  findUser,
-  listUsers,
-  createUser,
-  login,
-};
-// Should be in the user schema.
+//Function inspired from lesson 3 authentication example
 let isPasswordValid = async function (
   password: string,
   salt: string,
@@ -132,4 +127,11 @@ let isPasswordValid = async function (
 ) {
   const hash = await pbkdf2(password, salt, ITERATIONS, KEY_LENGTH, DIGEST);
   return userHash === hash.toString("hex");
+};
+
+export const user = {
+  findUser,
+  listUsers,
+  createUser,
+  login,
 };
