@@ -10,7 +10,7 @@ import { Role } from "../models/user-schema";
 const dbConnection = mongoose.createConnection(
   "mongodb://localhost:27017/Assignment1"
 );
-const ReservationModel = dbConnection.model("Reservation", schema);
+export const ReservationModel = dbConnection.model("Reservation", schema);
 
 const reservationList = async (req: Request, res: Response) => {
   let filter = {};
@@ -61,15 +61,29 @@ const createReservation = async (req: Request, res: Response) => {
   const { dateFrom, dateTo, roomId } = req.body;
   const { role, userId } = getMetaDataFromToken(req);
 
-  let reservation = new ReservationModel({
-    userId: userId,
-    dateFrom: dateFrom,
-    dateTo: dateTo,
-    roomId: roomId,
-  });
+  let filter = {};
 
-  await reservation.save();
-  res.json(reservation);
+  if (dateFrom && dateTo) {
+    filter = {
+      dateFrom: { $gte: dateFrom },
+      dateTo: { $lte: dateTo },
+      roomId: roomId,
+    };
+
+    let result = await ReservationModel.findOne(filter).lean().exec();
+    if (result) res.status(400).send("Date and/or room already taken");
+    else {
+      let reservation = new ReservationModel({
+        userId: userId,
+        dateFrom: dateFrom,
+        dateTo: dateTo,
+        roomId: roomId,
+      });
+
+      await reservation.save();
+      res.json(reservation);
+    }
+  } else res.status(400).send("Please specify dates");
 };
 
 //needs only to be accessible for roles manager, clerk, and guest (if created by guest)

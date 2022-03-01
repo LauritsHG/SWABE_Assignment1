@@ -4,6 +4,8 @@ import mongoose from "mongoose";
 import { Room, schema } from "../models/room-schema";
 import { getMetaDataFromToken } from "../util/middleware-util";
 import { Role } from "../models/user-schema";
+import { ReservationModel } from "./reservation-controller";
+import { Reservation } from "../models/reservation-schema";
 
 // import { dbConnection } from "../index";
 
@@ -15,16 +17,29 @@ const RoomModel = dbConnection.model("rooms", schema);
 
 const roomsList = async (req: Request, res: Response) => {
   res.setHeader("Content-Type", "application/json");
-  let { cur, pri, mat } = req.query;
-  let filter = { currency: {}, price: {}, material: {} }; // {currency: {$exists: true},material: {$exists: true},price: {$exists: true}};
-  if (cur != null) filter.currency = cur;
-  else filter.currency = { $exists: true };
-  if (pri != null) filter.price = { $gte: pri };
-  else filter.price = { $exists: true };
-  if (mat != null) filter.material = mat;
-  else filter.material = { $exists: true };
-  let result = await RoomModel.find(filter).lean().exec();
-  res.json(result);
+  const { date } = req.query;
+  let filter = {};
+  let result;
+  if (date) {
+    filter = { dateFrom: { $lte: date }, dateTo: { $gte: date } };
+    let Reservationfilter: Reservation[] = await ReservationModel.find(filter, {
+      roomId: 1,
+      _id: 0,
+    })
+      .lean()
+      .exec();
+
+    let occupiedRooms = Reservationfilter.map((x) => x.roomId);
+    result = await RoomModel.find({
+      roomNumber: { $nin: occupiedRooms },
+    })
+      .lean()
+      .exec();
+    res.json(result);
+  } else {
+    result = await RoomModel.find({}).lean().exec();
+    res.json(result);
+  }
   // look in bottom of scripts for a smarter filter way
 };
 
