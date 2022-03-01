@@ -1,7 +1,10 @@
 //import { Router } from "express";
 import { Request, Response } from "express";
 import mongoose from "mongoose";
-import { schema } from "../models/room-schema";
+import { Room, schema } from "../models/room-schema";
+import { getMetaDataFromToken } from "../util/middleware-util";
+import { Role } from "../models/user-schema";
+
 // import { dbConnection } from "../index";
 
 const dbConnection = mongoose.createConnection(
@@ -26,33 +29,54 @@ const roomsList = async (req: Request, res: Response) => {
 };
 
 const findRoom = async (req: Request, res: Response) => {
-  res.setHeader("Content-Type", "application/json");
-  res.json({ data: "SeedData added" });
+  const { uid } = req.params;
+
+  let room: Room = await RoomModel.findOne({
+    _id: uid,
+  }).exec();
+  if (room) {
+    res.json(room);
+  } else {
+    res.status(400).send("Room not found");
+  }
 };
 
 const createRoom = async (req: Request, res: Response) => {
-  //res.setHeader('Content-Type', 'application/json');
-  //res.json({"data": "Hello Orders id"});
-  res.setHeader("Content-Type", "application/json");
-  let { uid } = req.params;
-  let result = await RoomModel.find({ _id: uid }).lean().exec();
-  res.json(result);
+  const { roomNumber, numOfBeds, pricePerNight, oceanView } = req.body;
+  const { role } = getMetaDataFromToken(req);
+
+  if (role === Role.manager) {
+    let room = new RoomModel({
+      roomNumber: roomNumber,
+      numOfBeds: numOfBeds,
+      pricePerNight: pricePerNight,
+      oceanView: oceanView,
+    });
+    await room.save();
+    res.json(room);
+  } else res.status(401).send("Access denied only managers can create a room");
 };
 // Slet hele document og ændre det til det nye
 const updateRoom = async (req: Request, res: Response) => {
-  const data = req.body;
-  res.setHeader("Content-Type", "application/json");
-  let { uid } = req.params;
-  let result = await RoomModel.replaceOne({ _id: uid }, data);
-  res.json(result);
+  const { role } = getMetaDataFromToken(req);
+  const { uid } = req.params;
+  if (role === Role.manager || role === Role.clerk) {
+    const body = req.body;
+    let result = await RoomModel.updateOne({ _id: uid }, { $set: body }).exec();
+    res.json({ uid, result });
+  } else
+    res
+      .status(401)
+      .send("Access denied only managers and clerks can update a room");
 };
 // Updater documentet
 const deleteRoom = async (req: Request, res: Response) => {
-  const data = req.body;
-  res.setHeader("Content-Type", "application/json");
-  let { uid } = req.params;
-  let result = await RoomModel.updateOne({ _id: uid }, data);
-  res.json(result);
+  const { role } = getMetaDataFromToken(req);
+  const { uid } = req.params;
+  if (role === Role.manager) {
+    let result = await RoomModel.deleteOne({ _id: uid }).exec();
+    res.json({ result });
+  } else res.status(401).send("Access denied only managers can delete a room");
 };
 
 export const room = {

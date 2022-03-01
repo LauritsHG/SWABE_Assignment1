@@ -34,7 +34,7 @@ export const verifyToken = (
 ) => {
   const token = req.get("authorization")?.split(" ")[1];
   if (token === undefined) {
-    res.sendStatus(400);
+    res.status(400).send("undefined token");
   } else {
     readFile(PATH_PUBLIC_KEY, (err, publicKey) => {
       if (err) {
@@ -43,7 +43,7 @@ export const verifyToken = (
         verify(token, publicKey, { complete: true }, (err, decoded) => {
           if (err) {
             res.status(400).json({
-              message: err.message,
+              message: err.message + "Invalid Token",
             });
           } else {
             next();
