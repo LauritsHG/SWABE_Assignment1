@@ -1,3 +1,4 @@
+//Code taken from lesson 3 authentication example
 import crypto from "crypto";
 import util from "util";
 
